@@ -169,15 +169,15 @@ export function buildWorld(scene, quality) {
   /* porch slab + slots where items land */
   const doorDir = new THREE.Vector3(Math.sin(houseB.rotation.y), 0, Math.cos(houseB.rotation.y));
   const right = new THREE.Vector3(doorDir.z, 0, -doorDir.x);
-  const porchC = houseBPos.clone().addScaledVector(doorDir, 2.1);
-  const slab = box(2.4, 0.08, 1.6, ROOF, porchC.x, 0, porchC.z);
+  const porchC = houseBPos.clone().addScaledVector(doorDir, 2.2);
+  const slab = box(2.7, 0.08, 2.0, ROOF, porchC.x, 0, porchC.z);
   slab.rotation.y = houseB.rotation.y;
   scene.add(slab);
   world.porchSlots = [];
   for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++)
     world.porchSlots.push(porchC.clone()
-      .addScaledVector(right, (c - 0.5) * 1.0)
-      .addScaledVector(doorDir, (r - 1) * 0.5)
+      .addScaledVector(right, (c - 0.5) * 1.05)
+      .addScaledVector(doorDir, (r - 1) * 0.66)
       .setY(0.08));
 
   /* sea + lighthouse */

@@ -119,6 +119,63 @@ function truckPose(t) {
   truck.group.rotation.y = Math.atan2(_tan.x, _tan.z);
 }
 
+/* ---------- free 360° orbit camera ----------
+   one-finger drag = rotate around the focus (full 360° azimuth + tilt)
+   two-finger pinch / mouse wheel = zoom                              */
+const orbit = { az: 0, azT: 0, el: 0, elT: 0, zoom: 1, zoomT: 1 };
+const _sph = new THREE.Spherical();
+const ORBIT_MIN_R = 2.4, ORBIT_MAX_R = 40;
+function resetOrbit() {
+  orbit.az = orbit.azT = 0;
+  orbit.el = orbit.elT = 0;
+  orbit.zoom = orbit.zoomT = 1;
+}
+{
+  const ptrs = new Map();
+  let pinchD0 = 0, pinchZ0 = 1;
+  canvas.addEventListener('pointerdown', (e) => {
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      pinchD0 = Math.max(20, Math.hypot(a.x - b.x, a.y - b.y));
+      pinchZ0 = orbit.zoomT;
+    }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const p = ptrs.get(e.pointerId);
+    if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) {
+      orbit.azT += dx * 0.0075;                                  // full 360°, no clamp
+      orbit.elT = THREE.MathUtils.clamp(orbit.elT + dy * 0.004, -0.14, 0.5);
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      const d = Math.max(20, Math.hypot(a.x - b.x, a.y - b.y));
+      orbit.zoomT = THREE.MathUtils.clamp(pinchZ0 * pinchD0 / d, 0.55, 1.9);
+    }
+  });
+  const endPtr = (e) => { ptrs.delete(e.pointerId); };
+  canvas.addEventListener('pointerup', endPtr);
+  canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    orbit.zoomT = THREE.MathUtils.clamp(orbit.zoomT * (e.deltaY > 0 ? 1.08 : 0.93), 0.55, 1.9);
+  }, { passive: false });
+}
+function applyOrbit(dt) {
+  const f = 1 - Math.exp(-10 * dt);
+  orbit.az += (orbit.azT - orbit.az) * f;
+  orbit.el += (orbit.elT - orbit.el) * f;
+  orbit.zoom += (orbit.zoomT - orbit.zoom) * f;
+  _sph.setFromVector3(_off.copy(_camT).sub(_lookT));
+  _sph.theta -= orbit.az;
+  _sph.phi = THREE.MathUtils.clamp(_sph.phi - orbit.el, 0.3, 1.42);
+  _sph.radius = THREE.MathUtils.clamp(_sph.radius * orbit.zoom, ORBIT_MIN_R, ORBIT_MAX_R);
+  _camT.copy(_lookT).add(_off.setFromSpherical(_sph));
+}
+
 function camTargets() {
   if (S.phase === 'drive') {
     _off.set(4.2, 3.2, -6).applyAxisAngle(UP, truck.group.rotation.y);
@@ -297,7 +354,7 @@ function deliverOne(id) {
     mesh.position.y += Math.sin(e * Math.PI) * 1.5;
     mesh.rotation.y += 0.04;
     if (blob) {
-      blob.position.set(mesh.position.x, 0.085, mesh.position.z);
+      blob.position.set(mesh.position.x, 0.12, mesh.position.z);
       const h = 1 - Math.min(1, mesh.position.y / 1.6);
       blob.scale.setScalar(0.45 + 0.55 * h);
     }
@@ -368,6 +425,7 @@ function startOrder(i, snapCam = true) {
 
   truckPose(0);
   S.prevYaw = truck.group.rotation.y;
+  resetOrbit();
 
   ui.setOrder(order, i, ORDERS.length);
   ui.setPhase('load');
@@ -453,6 +511,7 @@ function loop() {
   world.update(dt, elapsed);
 
   camTargets();
+  applyOrbit(dt);
   const damp = S.phase === 'drive' ? 3.2 : 2.6;
   const f = 1 - Math.exp(-damp * dt);
   camPos.lerp(_camT, f);
@@ -460,17 +519,21 @@ function loop() {
   camera.position.copy(camPos);
   camera.lookAt(camLook);
 
+  /* re-bake shadows only while the scene is actually moving (truck drive,
+     item flights, place/undo pops) — keeps static frames free of cost */
+  if (S.phase === 'drive' || S.anims.length) renderer.shadowMap.needsUpdate = true;
+
   renderer.render(scene, camera);
 
   /* adaptive resolution */
   const ms = dt * 1000;
   frameEMA = frameEMA * 0.9 + ms * 0.1;
   const now = performance.now();
-  if (now - lastAdjust > 500) {
-    if (frameEMA > 21 && dprScale > 0.55) {
+  if (now - lastAdjust > 900) {
+    if (frameEMA > 22 && dprScale > 0.55) {
       dprScale = Math.max(0.55, dprScale - 0.12);
       applyDPR(); lastAdjust = now;
-    } else if (frameEMA < 15.5 && dprScale < 1) {
+    } else if (frameEMA < 15 && dprScale < 1) {
       dprScale = Math.min(1, dprScale + 0.12);
       applyDPR(); lastAdjust = now;
     }

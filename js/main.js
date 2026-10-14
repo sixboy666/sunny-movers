@@ -1,9 +1,9 @@
 // main.js — boot, state machine (load → drive → deliver), camera, animation loop
 import * as THREE from 'three';
 import { ORDERS } from './orders.js';
-import { makeItem } from './items.js';
-import { buildWorld } from './world.js';
-import { buildTruck } from './truck.js';
+import { makeItem } from './items.js?v=20261014b';
+import { buildWorld } from './world.js?v=20261014b';
+import { buildTruck } from './truck.js?v=20261014b';
 import { createUI } from './ui.js';
 import { sfx, engineStart, engineSet, engineStop, setMuted } from './audio.js';
 import { loadSave, persist } from './storage.js';
@@ -169,30 +169,25 @@ function applyOrbit(dt) {
   orbit.az += (orbit.azT - orbit.az) * f;
   orbit.el += (orbit.elT - orbit.el) * f;
   orbit.zoom += (orbit.zoomT - orbit.zoom) * f;
-  _sph.setFromVector3(_off.copy(_camT).sub(_lookT));
-  _sph.theta -= orbit.az;
-  _sph.phi = THREE.MathUtils.clamp(_sph.phi - orbit.el, 0.3, 1.42);
-  _sph.radius = THREE.MathUtils.clamp(_sph.radius * orbit.zoom, ORBIT_MIN_R, ORBIT_MAX_R);
-  _camT.copy(_lookT).add(_off.setFromSpherical(_sph));
 }
 
 function camTargets() {
   if (S.phase === 'drive') {
-    _off.set(4.2, 3.2, -6).applyAxisAngle(UP, truck.group.rotation.y);
+    _off.set(4.6, 3.5, -6.4).applyAxisAngle(UP, truck.group.rotation.y);
     _camT.copy(truck.group.position).add(_off);
-    _lookT.copy(truck.group.position); _lookT.y += 0.9;
+    _lookT.copy(truck.group.position); _lookT.y += 0.8;
   } else if (S.phase === 'deliver') {
     const c = _w.set(0, 0, 0);
     for (const s of world.porchSlots) c.add(s);
     c.multiplyScalar(1 / world.porchSlots.length);
     const dir = _off.copy(c).sub(world.houseBPos).setY(0).normalize();
-    _camT.copy(c).addScaledVector(dir, 4.6);
-    _camT.x += dir.z * 2.2; _camT.z += -dir.x * 2.2; _camT.y = 3.3;
-    _lookT.copy(c); _lookT.y = 0.5;
+    _camT.copy(c).addScaledVector(dir, 5.4);
+    _camT.x += dir.z * 2.6; _camT.z += -dir.x * 2.6; _camT.y = 3.9;
+    _lookT.copy(c); _lookT.y = 0.3;
   } else {
-    _off.set(3.0, 3.5, 5.4).applyAxisAngle(UP, truck.group.rotation.y);
+    _off.set(3.4, 3.9, 6.2).applyAxisAngle(UP, truck.group.rotation.y);
     _camT.copy(truck.group.position).add(_off);
-    _lookT.copy(truck.group.position); _lookT.y += 0.6;
+    _lookT.copy(truck.group.position); _lookT.y += 0.5;
   }
 }
 
@@ -211,7 +206,14 @@ function placeInBay(id, bayIdx) {
   const mesh = makeItem(id);
   const local = truck.bayLocal(bayIdx);
   mesh.position.set(local.x, 2.2, local.z);
-  mesh.rotation.y = ((bayIdx * 37) % 10) / 10 * 0.4 - 0.2;
+  mesh.rotation.y = ((bayIdx * 37) % 10) / 10 * 0.24 - 0.12;
+  /* fit-to-bay clamp: uniform scale so the rotated footprint can never
+     poke through bed walls or overlap a neighbouring bay */
+  const bb = new THREE.Box3().setFromObject(mesh);
+  bb.getSize(_p);
+  const fit = Math.min(1, 0.8 / Math.max(0.01, _p.x), 0.55 / Math.max(0.01, _p.z));
+  mesh.userData.baseScale = fit;
+  if (fit < 1) mesh.scale.setScalar(fit);
   truck.bedGroup.add(mesh);
   S.bays[bayIdx] = { id, mesh };
   S.placedStack.push(bayIdx);
@@ -221,7 +223,7 @@ function placeInBay(id, bayIdx) {
     const base = mesh.position.y;
     animate(0.22, (k) => {
       const s = 0.72 + 0.28 * easeBack(k);
-      mesh.scale.set(1 + (1 - s) * 0.6, s, 1 + (1 - s) * 0.6);
+      mesh.scale.set(fit * (1 + (1 - s) * 0.6), fit * s, fit * (1 + (1 - s) * 0.6));
       mesh.position.y = base;
     });
   });
@@ -342,7 +344,8 @@ function deliverOne(id) {
   const slotIdx = S.deliveredCount;          // claim slot at flight start (no double-booking)
   S.deliveredCount++;
   const mesh = rec.mesh;
-  mesh.scale.set(1, 1, 1);
+  const bs = mesh.userData.baseScale || 1;
+  mesh.scale.set(bs, bs, bs);
   scene.attach(mesh);
   const from = mesh.position.clone();
   const to = world.porchSlots[slotIdx % world.porchSlots.length];
@@ -364,7 +367,7 @@ function deliverOne(id) {
     if (blob) blob.visible = false;
     animate(0.2, (k) => {
       const s = 0.7 + 0.3 * easeBack(k);
-      mesh.scale.set(1 + (1 - s) * 0.6, s, 1 + (1 - s) * 0.6);
+      mesh.scale.set(bs * (1 + (1 - s) * 0.6), bs * s, bs * (1 + (1 - s) * 0.6));
     });
     S.porchMeshes.push(mesh);
     S.deliveredDone++;
@@ -511,12 +514,20 @@ function loop() {
   world.update(dt, elapsed);
 
   camTargets();
-  applyOrbit(dt);
   const damp = S.phase === 'drive' ? 3.2 : 2.6;
   const f = 1 - Math.exp(-damp * dt);
   camPos.lerp(_camT, f);
   camLook.lerp(_lookT, f);
-  camera.position.copy(camPos);
+  /* orbit applied as a pure delta on top of the smoothed base view —
+     never mutates the lerp targets, so the setViewOffset band stays correct */
+  applyOrbit(dt);
+  _sph.setFromVector3(_off.copy(camPos).sub(camLook));
+  if (orbit.az || orbit.el || orbit.zoom !== 1) {
+    _sph.theta -= orbit.az;
+    _sph.phi = THREE.MathUtils.clamp(_sph.phi - orbit.el, 0.3, 1.42);
+    _sph.radius = THREE.MathUtils.clamp(_sph.radius * orbit.zoom, ORBIT_MIN_R, ORBIT_MAX_R);
+  }
+  camera.position.copy(camLook).add(_off.setFromSpherical(_sph));
   camera.lookAt(camLook);
 
   /* re-bake shadows only while the scene is actually moving (truck drive,

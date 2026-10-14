@@ -84,16 +84,15 @@ button:active{transform:scale(.97)}
   font-family:var(--serif);font-weight:700;font-size:clamp(28px,7.4vw,40px);
   line-height:1.04;color:var(--ink);letter-spacing:-.01em}
 .headline .sub{margin-top:8px;font-size:13px;color:var(--ink-soft);max-width:230px;line-height:1.45}
-.meta-right{text-align:right;padding-top:26px;flex-shrink:0}
+.meta-right{text-align:right;padding-top:2px;flex-shrink:0}
 .meta-right p:first-child{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--ink-soft)}
 .meta-right .micro{margin-top:4px;font-size:8.5px;color:var(--ink-faint)}
 #band-top{height:8px}
 
-/* order card */
+/* order card (normal flow, between headline and camera band) */
 .order-card{
-  position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 218px);
-  background:var(--card);border-radius:var(--r-md);padding:11px 14px;box-shadow:var(--shadow);
-  border:1px solid rgba(255,255,255,.7);min-width:150px}
+  display:inline-block;background:var(--card);border-radius:var(--r-md);padding:10px 14px;
+  box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);min-width:150px;margin-top:2px}
 .order-card .micro{font-size:8.5px;color:var(--ink-faint)}
 .order-card h2{font-family:var(--serif);font-size:17px;margin:3px 0 2px;color:var(--ink)}
 .order-card .oc-sub{font-size:11px;color:var(--ink-soft)}
@@ -239,13 +238,17 @@ button:active{transform:scale(.97)}
 /* ============ responsive ============ */
 @media (min-width:700px){
   #hud{padding-left:max(18px,calc(50% - 280px));padding-right:max(18px,calc(50% - 280px))}
-  .order-card{left:max(18px,calc(50% - 280px))}
   .headline h1{font-size:40px}
 }
 @media (max-height:640px){
   .headline .sub{display:none}
   .headline h1{font-size:26px}
-  .order-card{top:calc(env(safe-area-inset-top,0px) + 188px)}
+  .order-card{padding:8px 12px}
+  .order-card h2{font-size:15px}
+}
+@media (max-width:370px){
+  .item-card .nm{font-size:10px}
+  .item-card .wt{font-size:9px}
 }
 @media (hover:hover){
   .pill-btn:hover{background:#fff}

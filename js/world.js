@@ -73,7 +73,7 @@ function makePalm(s = 1) {
 }
 
 /* ---------- road ribbon ---------- */
-function ribbon(curve, width, color, y = 0.015) {
+function ribbon(curve, width, color, y = 0.022) {
   const N = 64, pos = [], idx = [];
   const p = new THREE.Vector3(), tan = new THREE.Vector3(), side = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   for (let i = 0; i <= N; i++) {
@@ -106,7 +106,8 @@ export function buildWorld(scene, quality) {
   sun.shadow.mapSize.setScalar(quality === 'high' ? 2048 : 1024);
   const sc = sun.shadow.camera;
   sc.left = -16; sc.right = 16; sc.top = 16; sc.bottom = -16; sc.near = 2; sc.far = 40;
-  sun.shadow.bias = -0.0008;
+  sun.shadow.bias = -0.0002;
+  sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
   if (quality === 'high') {
     const fill = new THREE.DirectionalLight(0xe8f0ff, 0.3);
@@ -119,7 +120,7 @@ export function buildWorld(scene, quality) {
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
   scene.add(ground);
   const lawn = new THREE.Mesh(new THREE.CircleGeometry(13, 36), mat(0xe6ead6));
-  lawn.rotation.x = -Math.PI / 2; lawn.position.set(-1, 0.005, 2); lawn.receiveShadow = true;
+  lawn.rotation.x = -Math.PI / 2; lawn.position.set(-1, 0.01, 2); lawn.receiveShadow = true;
   scene.add(lawn);
 
   /* route: house A → house B by the sea */
@@ -140,7 +141,7 @@ export function buildWorld(scene, quality) {
   for (let s = 0.8; s < world.length - 0.8; s += 1.7) {
     const t = s / world.length;
     curve.getPointAt(t, p); curve.getTangentAt(t, tan);
-    const dash = box(0.5, 0.012, 0.09, 0xfaf6ec, p.x, 0.02, p.z, false);
+    const dash = box(0.5, 0.012, 0.09, 0xfaf6ec, p.x, 0.045, p.z, false);
     dash.rotation.y = Math.atan2(tan.x, tan.z) + Math.PI / 2;
     scene.add(dash);
   }

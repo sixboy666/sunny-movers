@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f4efe4">
+<title>Sunny Movers — Little truck. Big move.</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b9c8a'/%3E%3Cpath d='M14 36h20V22h8l8 8v6h4v6h-6a6 6 0 0 1-12 0H28a6 6 0 0 1-12 0h-2z' fill='%23faf6ec'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+  <div class="vignette"></div>
+
+  <!-- ============ HUD (non-interactive layer, buttons re-enable) ============ -->
+  <div id="hud">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">
+          <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#5b9c8a"/><path d="M14 36h20V22h8l8 8v6h4v6h-6a6 6 0 0 1-12 0H28a6 6 0 0 1-12 0h-2z" fill="#faf6ec"/></svg>
+        </span>
+        <span class="brand-text">
+          <strong>Sunny Movers</strong>
+          <em>HANDLE WITH HAPPY</em>
+        </span>
+      </div>
+      <nav class="top-actions">
+        <button id="btn-routes" class="pill-btn" type="button">Routes</button>
+        <button id="btn-sound" class="icon-btn" type="button" aria-label="Sound">
+          <svg viewBox="0 0 24 24" class="ic-on"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24" class="ic-off"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button id="btn-help" class="icon-btn" type="button" aria-label="Help">
+          <svg viewBox="0 0 24 24"><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.33c-.83.32-1.4 1-1.4 1.92v.5" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round"/><circle cx="11.5" cy="17.4" r="1.15" fill="currentColor"/></svg>
+        </button>
+      </nav>
+    </header>
+
+    <div class="steps" id="steps">
+      <span class="step" data-step="load"><b>01</b> LOAD</span>
+      <i></i>
+      <span class="step" data-step="drive"><b>02</b> DRIVE</span>
+      <i></i>
+      <span class="step" data-step="deliver"><b>03</b> DELIVER</span>
+    </div>
+
+    <div class="headline-row">
+      <div class="headline">
+        <p class="micro">A LITTLE TRUCK, A BIG DAY.</p>
+        <h1>Little truck.<br>Big move.</h1>
+        <p class="sub" id="headline-sub">Four treasured things. One new seaside home.</p>
+      </div>
+      <div class="meta-right">
+        <p id="meta-place">SUNSHELL BAY</p>
+        <p class="micro">SUNNY · MOVING DAY</p>
+      </div>
+    </div>
+
+    <div id="band-top"></div>
+
+    <aside class="order-card" id="order-card">
+      <p class="micro" id="oc-index">ORDER 01 / 06</p>
+      <h2 id="oc-name">Seaside Starter</h2>
+      <p class="oc-sub" id="oc-sub">Mrs. Codex · 4 items</p>
+    </aside>
+  </div>
+
+  <!-- ============ BOTTOM SHEET ============ -->
+  <section id="sheet">
+
+    <!-- LOAD phase -->
+    <div class="sheet-phase" id="phase-load">
+      <div class="sheet-head">
+        <h3>Moving list <span id="load-count">0 / 4</span></h3>
+        <div class="sheet-actions">
+          <button id="btn-auto" class="pill-btn teal" type="button">Auto load</button>
+          <button id="btn-undo" class="text-btn" type="button">↺ Undo</button>
+        </div>
+      </div>
+      <div class="item-row" id="item-row"></div>
+      <div class="load-bottom">
+        <div class="bay-block">
+          <p class="micro bay-label">CAB ↑<br>PICK A BAY</p>
+          <div class="bay-grid" id="bay-grid"></div>
+        </div>
+        <button id="btn-go" class="go-btn" type="button" disabled>
+          <span class="go-text">Let's go</span>
+          <svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="go-hint" id="go-hint">4 items to load</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DRIVE phase -->
+    <div class="sheet-phase hidden" id="phase-drive">
+      <div class="sheet-head">
+        <h3>Route <span id="drive-pct">0%</span></h3>
+        <p class="micro drive-tip">HOLD TO DRIVE · RELEASE TO COAST</p>
+      </div>
+      <div class="progress"><i id="drive-bar"></i></div>
+      <button id="btn-drive" class="go-btn drive" type="button">
+        <span class="go-text">Hold to drive</span>
+        <svg viewBox="0 0 24 24"><path d="M12 3v10M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15a7 7 0 0 0 14 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- DELIVER phase -->
+    <div class="sheet-phase hidden" id="phase-deliver">
+      <div class="sheet-head">
+        <h3>Unload <span id="deliver-count">0 / 4</span></h3>
+        <div class="sheet-actions">
+          <button id="btn-unload-all" class="pill-btn teal" type="button">Unload all</button>
+        </div>
+      </div>
+      <div class="item-row" id="deliver-row"></div>
+      <p class="micro deliver-tip">TAP AN ITEM TO CARRY IT TO THE PORCH</p>
+    </div>
+  </section>
+
+  <!-- ============ OVERLAYS ============ -->
+  <div class="overlay hidden" id="ov-result">
+    <div class="card result-card">
+      <p class="micro">ORDER COMPLETE</p>
+      <h2 id="r-title">Seaside Starter</h2>
+      <div class="stars" id="r-stars"><i>★</i><i>★</i><i>★</i></div>
+      <p class="r-line" id="r-line">Mrs. Codex says thank you!</p>
+      <div class="r-stats">
+        <div><b id="r-items">4</b><span>items</span></div>
+        <div><b id="r-time">0:00</b><span>time</span></div>
+        <div><b id="r-best">—</b><span>best</span></div>
+      </div>
+      <div class="r-actions">
+        <button id="btn-next" class="go-btn small" type="button"><span class="go-text">Next order</span>
+          <svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="btn-replay" class="pill-btn" type="button">Replay</button>
+        <button id="btn-routes2" class="text-btn" type="button">All routes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="ov-routes">
+    <div class="card routes-card">
+      <div class="card-head">
+        <h2>Routes</h2>
+        <button class="icon-btn close" data-close="ov-routes" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="routes-list"></div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="ov-help">
+    <div class="card help-card">
+      <div class="card-head">
+        <h2>How to play</h2>
+        <button class="icon-btn close" data-close="ov-help" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <ol class="help-steps">
+        <li><b>01 · LOAD</b><span>Pick an item from the moving list, then tap a bay on the truck to pack it. Heavy or fragile — everything fits.</span></li>
+        <li><b>02 · DRIVE</b><span>Press &amp; hold to roll down the seaside road. Release to coast. No rush — enjoy the palms.</span></li>
+        <li><b>03 · DELIVER</b><span>Tap each item to carry it to the new porch. Finish the order to earn stars and unlock the next route.</span></li>
+      </ol>
+      <p class="micro help-foot">LOAD IT YOURSELF FOR 3 STARS</p>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

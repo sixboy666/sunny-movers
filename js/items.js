@@ -115,10 +115,10 @@ const F = {
   },
   surf() {
     const g = new THREE.Group();
-    const board = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 1.3, 4, 10), mat(GOLD));
+    const board = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.85, 4, 10), mat(GOLD));
     board.rotation.z = Math.PI / 2; board.scale.set(1, 1, 0.32); board.position.y = 0.06;
     g.add(board);
-    g.add(B(1.5, 0.02, 0.06, CREAM, 0, 0.1, 0));           // stripe
+    g.add(B(1.0, 0.02, 0.06, CREAM, 0, 0.1, 0));           // stripe
     return g;
   },
   mattress() {

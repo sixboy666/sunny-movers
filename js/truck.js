@@ -52,8 +52,8 @@ function blobTexture() {
   return new THREE.CanvasTexture(c);
 }
 
-const BAY_X = [-0.45, 0.45];
-const BAY_Z = [-0.05, -0.7, -1.35];
+const BAY_X = [-0.42, 0.42];
+const BAY_Z = [-0.2, -0.76, -1.31];
 
 export function buildTruck() {
   const group = new THREE.Group();
@@ -61,31 +61,31 @@ export function buildTruck() {
   group.add(tilt);
 
   /* chassis + bed */
-  tilt.add(B(1.26, 0.2, 2.75, MINT_D, 0, 0.28, -0.05));            // chassis
-  tilt.add(B(1.3, 0.07, 1.55, 0xcbaa80, 0, 0.48, -0.7));           // wooden bed floor
-  tilt.add(B(0.06, 0.42, 1.5, MINT, -0.62, 0.55, -0.7));           // side walls
-  tilt.add(B(0.06, 0.42, 1.5, MINT, 0.62, 0.55, -0.7));
-  tilt.add(B(1.3, 0.42, 0.06, MINT, 0, 0.55, 0.08));               // front wall
-  tilt.add(B(1.3, 0.42, 0.06, MINT, 0, 0.55, -1.47));              // tailgate
+  tilt.add(B(1.5, 0.2, 2.9, MINT_D, 0, 0.28, -0.1));               // chassis
+  tilt.add(B(1.66, 0.07, 1.72, 0xcbaa80, 0, 0.48, -0.76));         // wooden bed floor
+  tilt.add(B(0.06, 0.42, 1.66, MINT, -0.86, 0.55, -0.76));         // side walls
+  tilt.add(B(0.06, 0.42, 1.66, MINT, 0.86, 0.55, -0.76));
+  tilt.add(B(1.66, 0.42, 0.06, MINT, 0, 0.55, 0.1));               // front wall
+  tilt.add(B(1.66, 0.42, 0.06, MINT, 0, 0.55, -1.62));             // tailgate
 
   /* logo panels */
   const logo = logoTexture();
   const panelMat = new THREE.MeshStandardMaterial({ map: logo, roughness: 0.92, metalness: 0 });
   for (const s of [-1, 1]) {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.44, 0.36), panelMat);
-    p.position.set(s * 0.655, 0.76, -0.7);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.36), panelMat);
+    p.position.set(s * 0.895, 0.76, -0.76);
     p.rotation.y = s * Math.PI / 2;
     tilt.add(p);
   }
 
   /* wooden slat rails */
   for (const s of [-1, 1]) {
-    for (const z of [0.0, -0.47, -0.93, -1.4])
-      tilt.add(B(0.05, 0.2, 0.05, WOOD, s * 0.62, 0.97, z));
-    tilt.add(B(0.06, 0.05, 1.5, WOOD, s * 0.62, 1.17, -0.7));
+    for (const z of [0.05, -0.5, -1.0, -1.55])
+      tilt.add(B(0.05, 0.2, 0.05, WOOD, s * 0.86, 0.97, z));
+    tilt.add(B(0.06, 0.05, 1.66, WOOD, s * 0.86, 1.17, -0.76));
   }
-  for (const x of [-0.4, 0, 0.4]) tilt.add(B(0.05, 0.2, 0.05, WOOD, x, 0.97, -1.5));
-  tilt.add(B(1.3, 0.05, 0.06, WOOD, 0, 1.17, -1.5));
+  for (const x of [-0.45, 0, 0.45]) tilt.add(B(0.05, 0.2, 0.05, WOOD, x, 0.97, -1.64));
+  tilt.add(B(1.66, 0.05, 0.06, WOOD, 0, 1.17, -1.64));
 
   /* cab (front = +z) */
   tilt.add(B(1.2, 0.5, 0.95, MINT, 0, 0.48, 0.8));                 // cab base
@@ -96,17 +96,17 @@ export function buildTruck() {
   tilt.add(B(0.04, 0.28, 0.5, GLASS, -0.56, 1.05, 0.72));          // side windows
   tilt.add(B(0.04, 0.28, 0.5, GLASS, 0.56, 1.05, 0.72));
   tilt.add(B(1.18, 0.08, 0.82, WHITE, 0, 1.4, 0.72));              // white roof
-  tilt.add(B(0.9, 0.14, 0.04, WHITE, 0, 0.56, 1.29));              // grille
-  tilt.add(B(1.3, 0.12, 0.12, WHITE, 0, 0.3, 1.4));                // front bumper
-  tilt.add(B(1.3, 0.1, 0.08, WHITE, 0, 0.32, -1.5));               // rear bumper
+  tilt.add(B(1.1, 0.14, 0.04, WHITE, 0, 0.56, 1.29));              // grille
+  tilt.add(B(1.5, 0.12, 0.12, WHITE, 0, 0.3, 1.4));                // front bumper
+  tilt.add(B(1.5, 0.1, 0.08, WHITE, 0, 0.32, -1.66));              // rear bumper
   for (const s of [-1, 1]) {                                       // headlights
     const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 10), mat(GOLD, 0.5));
     hl.rotation.x = Math.PI / 2;
     hl.position.set(s * 0.4, 0.68, 1.29);
     tilt.add(hl);
-    tilt.add(B(0.1, 0.06, 0.04, CORAL, s * 0.48, 0.58, -1.52));    // tail lights
+    tilt.add(B(0.1, 0.06, 0.04, CORAL, s * 0.6, 0.58, -1.66));     // tail lights
   }
-  tilt.add(B(0.4, 0.12, 0.03, WHITE, 0, 0.42, -1.53));             // license plate
+  tilt.add(B(0.4, 0.12, 0.03, WHITE, 0, 0.42, -1.67));             // license plate
 
   /* wheels (spin around x) */
   const wheels = [];
@@ -114,7 +114,7 @@ export function buildTruck() {
   tireGeo.rotateZ(Math.PI / 2);
   const hubGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.24, 12);
   hubGeo.rotateZ(Math.PI / 2);
-  for (const [x, z] of [[-0.64, 0.85], [0.64, 0.85], [-0.64, -0.95], [0.64, -0.95]]) {
+  for (const [x, z] of [[-0.82, 0.9], [0.82, 0.9], [-0.82, -1.1], [0.82, -1.1]]) {
     const w = new THREE.Group();
     const tire = new THREE.Mesh(tireGeo, mat(INK, 0.85));
     const hub = new THREE.Mesh(hubGeo, mat(WHITE, 0.7));
@@ -126,11 +126,11 @@ export function buildTruck() {
 
   /* soft blob shadow (stays on ground, never tilts) */
   const blob = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.3, 2.0),
+    new THREE.PlaneGeometry(2.6, 3.6),
     new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false })
   );
   blob.rotation.x = -Math.PI / 2;
-  blob.position.set(0, 0.02, -0.05);
+  blob.position.set(0, 0.02, -0.2);
   group.add(blob);
 
   /* bed anchor for cargo */
